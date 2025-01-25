@@ -1,25 +1,27 @@
-import requests
 import time
 from pathlib import Path
+
+import requests
+
 
 class LLMHandler:
     def __init__(self):
         self.port = 11435
         self.api_url = f"http://localhost:{self.port}/api/generate"  # Changed from https to http
         self.max_retries = 1
-        
+
     def check_ollama_service(self):
         try:
             response = requests.get(f"http://localhost:{self.port}/api/tags")
             return response.status_code == 200
         except requests.exceptions.ConnectionError:
             return False
-            
+
     def generate_cards(self, words: list, lang1: str, lang2: str) -> list:
         if not self.check_ollama_service():
             print("Error: Ollama service is not running. Please start it with 'ollama serve'")
             return []
-            
+
         cards = []
         batch_size = 15
         epochs = len(words) // batch_size + 1
@@ -39,34 +41,36 @@ class LLMHandler:
                             1. Write a short sentence in "{lang1}" using the word, but translate the word into "{lang2}" and place it in brackets.
                             2. After the sentence, write the original word from "{lang1}" and its translation in "{lang2}", followed by a few synonyms separated by commas.
                             Follow this structure:
-                            "Sentence with translated word.,Original word (translated word), synonym1, synonym2."
-                            
+                            '''
+                            Sentence with translated word1.;Original word (translated word1), synonym1, synonym2.
+                            Sentence with translated word2.;Original word (translated word2), synonym1, synonym2.
+                            Sentence with translated word3.;Original word (translated word3), synonym1, synonym2.
+                            '''
+                            Generate output strictly. Leave nothing else except for the structure. Do not add any additional information. Do not add any extra sentences. Do not ask questions.
                             Input:
                             Words = {[batch]}
                             Lang1 = {lang1}
                             Lang2 = {lang2}
-
-                            Generate output strictly. Leave nothing else except for the structure.
                             """,
                             "stream": False
                         },
                         verify=False  # Disable SSL verification
                     )
-                    
+
                     if response.status_code == 200:
                         result = response.json()
                         generated_text = result.get('response', '')
                         if generated_text:
-                            cards.extend(generated_text)
+                            cards.extend(generated_text.strip().splitlines())  # Ensure cards are processed as lines
                             break
                     retries += 1
                     time.sleep(1)
-                    
+
                 except requests.exceptions.RequestException as e:
-                    print(f"Error processing batch '{epoch + 1}/{epochs}' (attempt {retries + 1}/{self.max_retries}): {str(e)}")
+                    print(
+                        f"Error processing batch '{epoch + 1}/{epochs}' (attempt {retries + 1}/{self.max_retries}): {str(e)}")
                     retries += 1
                     time.sleep(1)
-
         return cards
 
 def read_input_words(file_path: str) -> list:
