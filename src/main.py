@@ -8,12 +8,13 @@ from pathlib import Path
 
 class LLMHandler:
     def __init__(self):
-        self.api_url = "http://localhost:11435/api/generate"  # Changed from https to http
+        self.port = 11435
+        self.api_url = f"http://localhost:{self.port}/api/generate"  # Changed from https to http
         self.max_retries = 1
         
     def check_ollama_service(self):
         try:
-            response = requests.get("http://localhost:11435/api/tags")
+            response = requests.get(f"http://localhost:{self.port}/api/tags")
             return response.status_code == 200
         except requests.exceptions.ConnectionError:
             return False
@@ -33,12 +34,27 @@ class LLMHandler:
                         json={
                             "model": "phi4",  # Changed from phi4 to phi
                             "prompt": f"""
-                            Translate and create an Anki card for the word '{word}' from {lang1} to {lang2}.
-                            Format:
-                            1. A sentence using the word in brackets: [translation]
-                            2. Word translation and example
+                            Take the word "{word}" in "{lang1}" (first language) and "{lang2}" (second language). Create one strict output in the following format:
+                            "Sentence with the word translated in brackets.,Original word (translated word in {lang2}), synonym1, synonym2."
                             
-                            Response should be exactly in this format and contain Ukrainian characters.
+                            Instructions:
+                            - Write a short sentence in {lang1} using the word "{word}" but translate "{word}" into {lang2} and place it in brackets.
+                            - After the sentence, write the original word from {lang1} and its translation in {lang2}, then list a few synonyms separated by commas.
+                            - Do not output anything else, strictly follow the exact format.
+                            
+                            Example:
+                            
+                            Input:
+                            word = go, lang1 = English, lang2 = Ukrainian
+                            
+                            Output:
+                            We decided to [піти] for a walk in the park.,Go (піти), move, proceed, travel.
+                            
+                            Input:
+                            word = see, lang1 = English, lang2 = Ukrainian
+                            
+                            Output:
+                            He [бачив] a strange bird in the garden.,See (бачив), watch, look, observe.
                             """,
                             "stream": False
                         },
