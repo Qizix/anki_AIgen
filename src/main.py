@@ -1,4 +1,6 @@
 import os
+
+import matplotlib.pyplot as plt
 import requests
 import json
 import time
@@ -6,12 +8,12 @@ from pathlib import Path
 
 class LLMHandler:
     def __init__(self):
-        self.api_url = "http://localhost:11434/api/generate"  # Changed from https to http
+        self.api_url = "http://localhost:11435/api/generate"  # Changed from https to http
         self.max_retries = 1
         
     def check_ollama_service(self):
         try:
-            response = requests.get("http://localhost:11434/api/tags")
+            response = requests.get("http://localhost:11435/api/tags")
             return response.status_code == 200
         except requests.exceptions.ConnectionError:
             return False
