@@ -1,8 +1,4 @@
-import os
-
-import matplotlib.pyplot as plt
 import requests
-import json
 import time
 from pathlib import Path
 
@@ -25,36 +21,32 @@ class LLMHandler:
             return []
             
         cards = []
-        for word in words:
+        batch_size = 15
+        epochs = len(words) // batch_size + 1
+        print(f"Generating cards for {len(words)} words in {epochs} epochs...")
+
+        for epoch in range(epochs):
+            batch = words[epoch * batch_size: (epoch + 1) * batch_size]
             retries = 0
             while retries < self.max_retries:
                 try:
                     response = requests.post(
                         self.api_url,
                         json={
-                            "model": "phi4",  # Changed from phi4 to phi
+                            "model": "phi4",
                             "prompt": f"""
-                            Take the word "{word}" in "{lang1}" (first language) and "{lang2}" (second language). Create one strict output in the following format:
-                            "Sentence with the word translated in brackets.,Original word (translated word in {lang2}), synonym1, synonym2."
-                            
-                            Instructions:
-                            - Write a short sentence in {lang1} using the word "{word}" but translate "{word}" into {lang2} and place it in brackets.
-                            - After the sentence, write the original word from {lang1} and its translation in {lang2}, then list a few synonyms separated by commas.
-                            - Do not output anything else, strictly follow the exact format.
-                            
-                            Example:
+                            Take the following list of words in "{lang1}" and translate them to "{lang2}". For each word, perform the following steps:
+                            1. Write a short sentence in "{lang1}" using the word, but translate the word into "{lang2}" and place it in brackets.
+                            2. After the sentence, write the original word from "{lang1}" and its translation in "{lang2}", followed by a few synonyms separated by commas.
+                            Follow this structure:
+                            "Sentence with translated word.,Original word (translated word), synonym1, synonym2."
                             
                             Input:
-                            word = go, lang1 = English, lang2 = Ukrainian
-                            
-                            Output:
-                            We decided to [піти] for a walk in the park.,Go (піти), move, proceed, travel.
-                            
-                            Input:
-                            word = see, lang1 = English, lang2 = Ukrainian
-                            
-                            Output:
-                            He [бачив] a strange bird in the garden.,See (бачив), watch, look, observe.
+                            Words = {[batch]}
+                            Lang1 = {lang1}
+                            Lang2 = {lang2}
+
+                            Generate output strictly. Leave nothing else except for the structure.
                             """,
                             "stream": False
                         },
@@ -65,19 +57,16 @@ class LLMHandler:
                         result = response.json()
                         generated_text = result.get('response', '')
                         if generated_text:
-                            cards.append(generated_text)
+                            cards.extend(generated_text)
                             break
                     retries += 1
                     time.sleep(1)
                     
                 except requests.exceptions.RequestException as e:
-                    print(f"Error processing word '{word}' (attempt {retries + 1}/{self.max_retries}): {str(e)}")
+                    print(f"Error processing batch '{epoch + 1}/{epochs}' (attempt {retries + 1}/{self.max_retries}): {str(e)}")
                     retries += 1
                     time.sleep(1)
-                    
-            if retries == self.max_retries:
-                print(f"Failed to process word '{word}' after {self.max_retries} attempts")
-                
+
         return cards
 
 def read_input_words(file_path: str) -> list:
@@ -118,7 +107,6 @@ def main():
         return
     
     # Generate cards
-    print(f"Generating cards for {len(words_to_process)} words...")
     generated_cards = llm_handler.generate_cards(words_to_process, language1, language2)
     
     # Save output
