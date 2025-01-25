@@ -2,6 +2,7 @@ import time
 from pathlib import Path
 
 import requests
+import sys
 
 
 class LLMHandler:
@@ -94,10 +95,10 @@ def main():
     # Create directories if they don't exist
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     
-    # Fixed languages for this use case
-    language1 = 'english'
-    language2 = 'ukrainian'
-    
+    # Language selection via terminal arguments
+    language1 = sys.argv[1] if len(sys.argv) > 1 else 'english'
+    language2 = sys.argv[2] if len(sys.argv) > 2 else 'ukrainian'
+
     # Read input words
     words_to_process = read_input_words(input_file)
     if not words_to_process:
