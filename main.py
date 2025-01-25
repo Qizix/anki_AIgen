@@ -83,13 +83,13 @@ def read_input_words(file_path: str) -> list:
         return []
 
 def save_output(cards: list, file_path: str):
-    with open(file_path, 'w', encoding='utf-8') as f:
+    with open(file_path, 'a', encoding='utf-8') as f:
         for card in cards:
             f.write(f"{card}\n")
 
 def main():
     # Setup paths
-    input_file = "input/word_lists/custom_words.txt"
+    input_file = "input/word_lists/generated_words.txt"
     output_file = "output/anki_cards.txt"
     
     # Create directories if they don't exist
