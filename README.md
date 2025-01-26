@@ -110,15 +110,5 @@ The `generate_word_list.py` script is designed to generate structured, diverse, 
 
 ---
 
-## Error Handling
-- If the input file does not exist or is improperly formatted, the program will notify the user and exit gracefully.
-- If the Ollama service is not running, the program will display a message to start it:
-```bash
-  $ ollama serve
-```
-- The word generation script ensures **no duplicate entries** in the final word list.
-
----
-
 ## Notes
 Feel free to contribute or raise issues for further development ideas!
